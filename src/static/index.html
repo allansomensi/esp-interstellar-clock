@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP-RS Web Server</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            margin: auto;
+        }
+
+        h1,
+        h2 {
+            color: #333;
+        }
+
+        .row {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .row input {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        .row button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        .row button:hover {
+            background-color: #218838;
+        }
+
+        .message {
+            margin-top: 10px;
+            font-weight: bold;
+            color: #007bff;
+        }
+
+        #status {
+            margin-top: 30px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #status p {
+            margin: 10px 0;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById('digitsInput').value = '';
+            document.getElementById('brightnessInput').value = '';
+        });
+
+        function sendDigits() {
+            let digits = document.getElementById('digitsInput').value;
+            if (digits) {
+                fetch('/set_digits?' + encodeURIComponent(digits), {
+                    method: 'GET'
+                })
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('message').innerText = "Digits sent: " + digits;
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                alert("Please enter digits before sending.");
+            }
+        }
+
+        function setBrightness() {
+            let brightness = document.getElementById('brightnessInput').value;
+            if (brightness >= 1 && brightness <= 7) {
+                fetch('/set_brightness?' + brightness, {
+                    method: 'GET'
+                })
+                    .then(response => response.text())
+                    .then(data => {
+                        document.getElementById('message').innerText = "Brightness set to: " + brightness;
+                    })
+                    .catch(error => console.error('Error:', error));
+            } else {
+                alert("Brightness must be between 1 and 7.");
+            }
+        }
+
+        function fetchStatus() {
+            fetch('/get_status', {
+                method: 'GET'
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('status').innerHTML = data;
+                })
+                .catch(error => console.error('Error fetching status:', error));
+        }
+
+        function syncTime() {
+            fetch('/sync_time', {
+                method: 'GET'
+            })
+                .then(response => response.text())
+                .then(data => {
+                    document.getElementById('message').innerText = "Time synced successfully!";
+                    fetchStatus();
+                })
+                .catch(error => console.error('Error syncing time:', error));
+        }
+
+        setInterval(fetchStatus, 30000);
+        fetchStatus();
+    </script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>ESP Server</h1>
+        <p id="message" class="message"></p>
+
+        <!-- Display -->
+        <h2>Display</h2>
+        <div class="row">
+            <input type="text" id="digitsInput" placeholder="Enter digits" autocomplete="off">
+            <button onclick="sendDigits()">Send Digits</button>
+        </div>
+        <div class="row">
+            <input type="number" id="brightnessInput" placeholder="Brightness (1-7)" min="1" max="7" autocomplete="off">
+            <button onclick="setBrightness()">Set Brightness</button>
+        </div>
+
+        <!-- Sync Time Button -->
+        <h2>Sync Time</h2>
+        <div class="row">
+            <button onclick="syncTime()">Sync Time with SNTP</button>
+        </div>
+
+        <!-- Status Section -->
+        <h2>Status</h2>
+        <div id="status">
+            <p><strong>SSID:</strong> <span id="ssid">Loading...</span></p>
+            <p><strong>Time Zone:</strong> <span id="timezone">Loading...</span></p>
+            <p><strong>Time:</strong> <span id="time">Loading...</span></p>
+        </div>
+    </div>
+</body>
+
+</html>
